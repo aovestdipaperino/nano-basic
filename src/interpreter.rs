@@ -1,8 +1,16 @@
+//! BASIC interpreter core functionality.
+//!
+//! This module implements the interpreter for Commodore 64 BASIC V2, including
+//! program storage, variable management, control flow (GOTO, GOSUB, FOR/NEXT),
+//! and execution of BASIC statements. It also handles loading and saving programs
+//! in the C64 .PRG format.
+
 use crate::expression::ExpressionParser;
 use crate::tokens::TokenTable;
 use std::collections::{BTreeMap, HashMap};
 use std::fs;
 
+#[derive(Debug)]
 pub struct Interpreter {
     token_table: TokenTable,
     /// Program lines stored by line number
@@ -43,7 +51,25 @@ impl Interpreter {
         }
     }
 
-    /// Execute a command or add a program line
+    /// Executes a BASIC command or adds a program line.
+    ///
+    /// If the input starts with a line number, it adds or updates that program line.
+    /// If the input is a line number alone, it deletes that line. Otherwise, it executes
+    /// the input as an immediate command.
+    ///
+    /// # Examples
+    ///
+    /// ```ignore
+    /// let mut interp = Interpreter::new();
+    /// // Add a program line
+    /// interp.execute("10 PRINT \"HELLO\"")?;
+    /// // Execute immediate command
+    /// let output = interp.execute("PRINT 2+2")?;
+    /// ```
+    ///
+    /// # Errors
+    ///
+    /// Returns an error string if the command fails (e.g., syntax error, file not found).
     pub fn execute(&mut self, input: &str) -> Result<Vec<String>, String> {
         let trimmed = input.trim();
         if trimmed.is_empty() {
@@ -84,9 +110,7 @@ impl Interpreter {
             "RUN" => self.cmd_run(),
             "NEW" => self.cmd_new(),
             "CLR" => self.cmd_clr(),
-            "QUIT" | "EXIT" | "BYE" => {
-                return Err("QUIT".to_string());
-            }
+            "QUIT" | "EXIT" | "BYE" => Err("QUIT".to_string()),
             "LOAD" => {
                 if parts.len() < 2 {
                     return Err("SYNTAX".to_string());
@@ -265,8 +289,8 @@ impl Interpreter {
         }
 
         // Handle GOTO
-        if upper.starts_with("GOTO ") {
-            let line_str = upper[5..].trim();
+        if let Some(stripped) = upper.strip_prefix("GOTO ") {
+            let line_str = stripped.trim();
             let target = line_str
                 .parse::<u16>()
                 .map_err(|_| "SYNTAX ERROR".to_string())?;
@@ -274,8 +298,8 @@ impl Interpreter {
         }
 
         // Handle GOSUB
-        if upper.starts_with("GOSUB ") {
-            let line_str = upper[6..].trim();
+        if let Some(stripped) = upper.strip_prefix("GOSUB ") {
+            let line_str = stripped.trim();
             let target = line_str
                 .parse::<u16>()
                 .map_err(|_| "SYNTAX ERROR".to_string())?;
@@ -305,7 +329,9 @@ impl Interpreter {
                 let condition = &trimmed[3..then_pos];
                 let then_part = &trimmed[then_pos + 6..];
 
-                let value = self.expr_parser.parse_and_eval(condition, &self.variables)?;
+                let value = self
+                    .expr_parser
+                    .parse_and_eval(condition, &self.variables)?;
                 let is_true = match value {
                     Value::Number(n) => n != 0.0,
                     Value::String(_) => return Err("TYPE MISMATCH".to_string()),
@@ -338,7 +364,9 @@ impl Interpreter {
             if let Some(eq_pos) = var_assign.find('=') {
                 let var_name = var_assign[..eq_pos].trim().to_uppercase();
                 let start_expr = &var_assign[eq_pos + 1..];
-                let start_val = self.expr_parser.parse_and_eval(start_expr, &self.variables)?;
+                let start_val = self
+                    .expr_parser
+                    .parse_and_eval(start_expr, &self.variables)?;
 
                 if let Value::Number(start) = start_val {
                     // Find TO
@@ -346,22 +374,26 @@ impl Interpreter {
                         let end_expr = &rest[to_pos + 4..];
 
                         // Check for STEP
-                        let (end_expr, step) = if let Some(step_pos) = end_expr.to_uppercase().find(" STEP ") {
-                            let step_expr = &end_expr[step_pos + 6..];
-                            let step_val = self.expr_parser.parse_and_eval(step_expr, &self.variables)?;
-                            if let Value::Number(s) = step_val {
-                                (&end_expr[..step_pos], s)
+                        let (end_expr, step) =
+                            if let Some(step_pos) = end_expr.to_uppercase().find(" STEP ") {
+                                let step_expr = &end_expr[step_pos + 6..];
+                                let step_val = self
+                                    .expr_parser
+                                    .parse_and_eval(step_expr, &self.variables)?;
+                                if let Value::Number(s) = step_val {
+                                    (&end_expr[..step_pos], s)
+                                } else {
+                                    return Err("TYPE MISMATCH".to_string());
+                                }
                             } else {
-                                return Err("TYPE MISMATCH".to_string());
-                            }
-                        } else {
-                            (end_expr, 1.0)
-                        };
+                                (end_expr, 1.0)
+                            };
 
                         let end_val = self.expr_parser.parse_and_eval(end_expr, &self.variables)?;
                         if let Value::Number(end) = end_val {
                             // Set loop variable
-                            self.variables.insert(var_name.clone(), Value::Number(start));
+                            self.variables
+                                .insert(var_name.clone(), Value::Number(start));
 
                             // Push loop info
                             if let Some(line) = current_line {
@@ -394,10 +426,14 @@ impl Interpreter {
                     };
 
                     if should_continue {
-                        self.variables.insert(loop_info.var_name.clone(), Value::Number(new_val));
+                        self.variables
+                            .insert(loop_info.var_name.clone(), Value::Number(new_val));
                         // Jump to line AFTER the FOR statement
                         let line_numbers: Vec<u16> = self.program.keys().copied().collect();
-                        if let Some(pos) = line_numbers.iter().position(|&x| x == loop_info.return_line) {
+                        if let Some(pos) = line_numbers
+                            .iter()
+                            .position(|&x| x == loop_info.return_line)
+                        {
                             if pos + 1 < line_numbers.len() {
                                 return Ok((Vec::new(), Some(line_numbers[pos + 1])));
                             }
@@ -434,6 +470,7 @@ impl Interpreter {
             return Err("INVALID FILE".to_string());
         }
 
+        // Skip the first 2 bytes (0x0801), which is the C64 BASIC load address
         let mut pos = 2;
         self.program.clear();
 
@@ -466,9 +503,11 @@ impl Interpreter {
 
     fn save_prg(&self) -> Result<Vec<u8>, String> {
         let mut data = Vec::new();
+        // Write the C64 BASIC load address (0x0801)
         data.push(0x01);
         data.push(0x08);
 
+        // Starting address for BASIC programs on the C64
         let mut addr = 0x0801u16;
 
         for (line_num, tokens) in &self.program {

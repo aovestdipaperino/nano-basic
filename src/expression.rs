@@ -1,3 +1,10 @@
+//! Expression parsing and evaluation.
+//!
+//! This module provides expression parsing for Commodore 64 BASIC V2, supporting
+//! arithmetic operators, comparison operators, logical operators (AND, OR, NOT),
+//! string operations, and built-in functions (SIN, COS, ABS, INT, RND, etc.).
+//! It uses a recursive descent parser with proper operator precedence.
+
 use crate::interpreter::Value;
 use std::collections::HashMap;
 
@@ -26,6 +33,7 @@ enum Token {
     Comma,
 }
 
+#[derive(Debug)]
 pub struct ExpressionParser {
     tokens: Vec<Token>,
     pos: usize,
@@ -39,6 +47,25 @@ impl ExpressionParser {
         }
     }
 
+    /// Parses and evaluates a BASIC expression.
+    ///
+    /// Takes an expression string and a variable context, then tokenizes, parses,
+    /// and evaluates the expression according to C64 BASIC V2 rules. Supports
+    /// arithmetic, string concatenation, comparisons, logical operations, and
+    /// built-in functions.
+    ///
+    /// # Examples
+    ///
+    /// ```ignore
+    /// let mut parser = ExpressionParser::new();
+    /// let vars = HashMap::new();
+    /// let result = parser.parse_and_eval("2 + 2 * 3", &vars)?;
+    /// ```
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the expression has invalid syntax, type mismatches,
+    /// or division by zero.
     pub fn parse_and_eval(
         &mut self,
         expr: &str,
@@ -132,9 +159,7 @@ impl ExpressionParser {
                 c if c.is_ascii_digit() || c == '.' => {
                     // Number
                     let mut num_str = String::new();
-                    while i < chars.len()
-                        && (chars[i].is_ascii_digit() || chars[i] == '.')
-                    {
+                    while i < chars.len() && (chars[i].is_ascii_digit() || chars[i] == '.') {
                         num_str.push(chars[i]);
                         i += 1;
                     }
@@ -144,9 +169,7 @@ impl ExpressionParser {
                 c if c.is_ascii_alphabetic() => {
                     // Variable or function
                     let mut name = String::new();
-                    while i < chars.len()
-                        && (chars[i].is_ascii_alphanumeric() || chars[i] == '$')
-                    {
+                    while i < chars.len() && (chars[i].is_ascii_alphanumeric() || chars[i] == '$') {
                         name.push(chars[i]);
                         i += 1;
                     }
@@ -445,7 +468,13 @@ impl ExpressionParser {
             "SGN" => {
                 let val = self.parse_or(variables)?;
                 let n = self.to_number(&val)?;
-                Value::Number(if n > 0.0 { 1.0 } else if n < 0.0 { -1.0 } else { 0.0 })
+                Value::Number(if n > 0.0 {
+                    1.0
+                } else if n < 0.0 {
+                    -1.0
+                } else {
+                    0.0
+                })
             }
             "SQR" => {
                 let val = self.parse_or(variables)?;
@@ -490,13 +519,13 @@ impl ExpressionParser {
             }
             "RND" => {
                 let _val = self.parse_or(variables)?;
-                // Simple pseudo-random for now
+                // Simple pseudo-random generator using system time as seed.
+                // The modulo value (1000000) provides sufficient precision for
+                // typical BASIC programs while avoiding floating point precision issues.
                 use std::collections::hash_map::RandomState;
-                use std::hash::{BuildHasher, Hash, Hasher};
+                use std::hash::BuildHasher;
                 let random_state = RandomState::new();
-                let mut hasher = random_state.build_hasher();
-                std::time::SystemTime::now().hash(&mut hasher);
-                let hash = hasher.finish();
+                let hash = random_state.hash_one(std::time::SystemTime::now());
                 Value::Number((hash % 1000000) as f64 / 1000000.0)
             }
             "LEN" => {

@@ -1,16 +1,22 @@
+//! A Commodore 64 BASIC V2 interpreter with a terminal UI.
+//!
+//! This interpreter emulates the behavior of the Commodore 64 BASIC V2 environment,
+//! including tokenization, program storage, and execution. It provides a terminal-based
+//! user interface that replicates the classic C64 blue screen aesthetic.
+
+mod expression;
+mod interpreter;
 mod tokens;
 mod ui;
-mod interpreter;
-mod expression;
 
 use crossterm::{
     event::{self, DisableMouseCapture, EnableMouseCapture, Event, KeyCode, KeyModifiers},
     execute,
-    terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
+    terminal::{EnterAlternateScreen, LeaveAlternateScreen, disable_raw_mode, enable_raw_mode},
 };
 use ratatui::{
-    backend::{Backend, CrosstermBackend},
     Terminal,
+    backend::{Backend, CrosstermBackend},
 };
 use std::io;
 
@@ -42,10 +48,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
-fn run_app<B: Backend>(
-    terminal: &mut Terminal<B>,
-    app: &mut ui::App,
-) -> io::Result<()> {
+fn run_app<B: Backend>(terminal: &mut Terminal<B>, app: &mut ui::App) -> io::Result<()> {
     loop {
         terminal.draw(|f| ui::draw(f, app))?;
 

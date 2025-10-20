@@ -1,6 +1,13 @@
+//! Tokenization support for Commodore 64 BASIC V2.
+//!
+//! This module provides tokenization and detokenization for C64 BASIC V2 keywords.
+//! The C64 stored BASIC programs in a tokenized format where keywords were represented
+//! by single bytes (0x80-0xD1), saving memory and improving execution speed.
+
 use std::collections::HashMap;
 
 /// C64 BASIC V2 tokens (0x80-0xCB)
+#[derive(Debug)]
 pub struct TokenTable {
     token_to_keyword: HashMap<u8, &'static str>,
     keyword_to_token: HashMap<&'static str, u8>,
@@ -99,7 +106,11 @@ impl TokenTable {
         ];
 
         // Populate both maps
-        for (token, keyword) in commands.iter().chain(operators.iter()).chain(functions.iter()) {
+        for (token, keyword) in commands
+            .iter()
+            .chain(operators.iter())
+            .chain(functions.iter())
+        {
             token_to_keyword.insert(*token, *keyword);
             keyword_to_token.insert(*keyword, *token);
         }
@@ -119,7 +130,20 @@ impl TokenTable {
         self.keyword_to_token.get(keyword).copied()
     }
 
-    /// Detokenize a line of tokenized BASIC
+    /// Converts tokenized BASIC bytes back into readable text.
+    ///
+    /// This method takes a byte array containing tokenized C64 BASIC and converts
+    /// it back to the original text format. Tokens (0x80+) are replaced with their
+    /// keyword equivalents, while preserving string literals and regular characters.
+    ///
+    /// # Examples
+    ///
+    /// ```ignore
+    /// let table = TokenTable::new();
+    /// let tokenized = vec![0x99, b' ', b'"', b'H', b'I', b'"', 0x00];
+    /// let result = table.detokenize(&tokenized);
+    /// assert_eq!(result, "PRINT \"HI\"");
+    /// ```
     pub fn detokenize(&self, tokenized: &[u8]) -> String {
         let mut result = String::new();
         let mut i = 0;
@@ -156,7 +180,19 @@ impl TokenTable {
         result.trim_end().to_string()
     }
 
-    /// Tokenize a line of BASIC text
+    /// Converts BASIC text into tokenized byte format.
+    ///
+    /// This method converts human-readable BASIC text into the tokenized format
+    /// used by the C64. Keywords are replaced with single-byte tokens (0x80+),
+    /// while string literals and other characters are preserved as-is.
+    ///
+    /// # Examples
+    ///
+    /// ```ignore
+    /// let table = TokenTable::new();
+    /// let tokenized = table.tokenize("PRINT \"HELLO\"");
+    /// assert!(tokenized[0] == 0x99); // PRINT token
+    /// ```
     pub fn tokenize(&self, line: &str) -> Vec<u8> {
         let mut result = Vec::new();
         let upper = line.to_uppercase();
@@ -185,8 +221,8 @@ impl TokenTable {
                 if upper[i..].starts_with(keyword) {
                     // Check if it's a complete word (not part of a variable name)
                     let after_idx = i + keyword.len();
-                    let is_complete = after_idx >= bytes.len()
-                        || !bytes[after_idx].is_ascii_alphanumeric();
+                    let is_complete =
+                        after_idx >= bytes.len() || !bytes[after_idx].is_ascii_alphanumeric();
 
                     if is_complete {
                         result.push(self.keyword_to_token[keyword]);

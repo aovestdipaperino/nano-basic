@@ -1,18 +1,32 @@
+//! Terminal UI for the Commodore 64 BASIC interpreter.
+//!
+//! This module provides a retro-styled terminal interface that emulates the classic
+//! Commodore 64 blue screen. It handles user input, displays program output, and
+//! maintains the visual aesthetic of the original C64 BASIC environment.
+
 use ratatui::{
+    Frame,
     layout::{Constraint, Direction, Layout, Rect},
     style::{Color, Modifier, Style},
     text::{Line, Span},
     widgets::{Block, Borders, Paragraph, Wrap},
-    Frame,
 };
 
 use crate::interpreter::Interpreter;
 
+/// Background color matching the Commodore 64 blue screen.
 const C64_BLUE: Color = Color::Rgb(64, 50, 133);
+
+/// Text color matching the Commodore 64 light blue.
 const C64_LIGHT_BLUE: Color = Color::Rgb(122, 191, 199);
+
+/// Display width in characters, matching the C64's 40-column text mode.
 const WIDTH: usize = 40;
+
+/// Display height in characters, matching the C64's 25-row text mode.
 const HEIGHT: usize = 25;
 
+#[derive(Debug)]
 pub struct App {
     pub input: String,
     pub output: Vec<String>,
@@ -22,12 +36,13 @@ pub struct App {
 
 impl App {
     pub fn new() -> Self {
-        let mut output = Vec::new();
-        output.push("    **** COMMODORE 64 BASIC V2 ****".to_string());
-        output.push("".to_string());
-        output.push(" 64K RAM SYSTEM  38911 BASIC BYTES FREE".to_string());
-        output.push("".to_string());
-        output.push("READY.".to_string());
+        let output = vec![
+            "    **** COMMODORE 64 BASIC V2 ****".to_string(),
+            "".to_string(),
+            " 64K RAM SYSTEM  38911 BASIC BYTES FREE".to_string(),
+            "".to_string(),
+            "READY.".to_string(),
+        ];
 
         App {
             input: String::new(),
@@ -55,7 +70,7 @@ impl App {
 
     pub fn handle_enter(&mut self) -> bool {
         let input = self.input.clone();
-        self.output.push(format!("{}", input));
+        self.output.push(input.to_string());
         self.input.clear();
         self.cursor_pos = 0;
 
@@ -111,10 +126,7 @@ pub fn draw(f: &mut Frame, app: &App) {
 
     let chunks = Layout::default()
         .direction(Direction::Vertical)
-        .constraints([
-            Constraint::Min(1),
-            Constraint::Length(3),
-        ])
+        .constraints([Constraint::Min(1), Constraint::Length(3)])
         .split(display_area);
 
     // Output area
@@ -136,7 +148,11 @@ pub fn draw(f: &mut Frame, app: &App) {
                 .borders(Borders::ALL)
                 .border_style(Style::default().fg(C64_LIGHT_BLUE))
                 .title(" COMMODORE 64 BASIC ")
-                .title_style(Style::default().fg(C64_LIGHT_BLUE).add_modifier(Modifier::BOLD)),
+                .title_style(
+                    Style::default()
+                        .fg(C64_LIGHT_BLUE)
+                        .add_modifier(Modifier::BOLD),
+                ),
         )
         .wrap(Wrap { trim: false });
 
