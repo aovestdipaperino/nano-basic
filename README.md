@@ -1,21 +1,29 @@
 # Nano-BASIC: Commodore 64 BASIC Interpreter
 
+![Nano-BASIC Logo](LOGO.png)
+
 A Commodore 64 BASIC V2 interpreter with an authentic 40x25 character TUI that resembles the original C64 screen.
 
-## Features
+## ✨ Features
 
 - **Authentic C64 TUI**: 40x25 character display with classic blue background and light blue text
+- **Full Expression Support**: Math operators (+, -, *, /, ^), comparisons (=, <>, <, >, <=, >=), logical operators (AND, OR, NOT)
+- **Control Flow**: IF/THEN, GOTO, GOSUB/RETURN, FOR/NEXT loops with STEP
+- **Math Functions**: ABS, INT, SGN, SQR, SIN, COS, TAN, ATN, LOG, EXP, RND
+- **String Functions**: LEFT$, RIGHT$, MID$, LEN, ASC, CHR$, VAL, STR$
 - **Tokenized .PRG Format**: Read and write C64 BASIC programs in native tokenized format
-- **C64 BASIC V2 Commands**: Support for classic commands like LOAD, SAVE, LIST, RUN, NEW
+- **Variables**: Numeric and string variables with automatic type handling
 - **REPL Interface**: Interactive command-line experience like the real C64
 
-## Building
+## 🚀 Quick Start
+
+### Building
 
 ```bash
 cargo build --release
 ```
 
-## Running
+### Running
 
 ```bash
 cargo run
@@ -23,114 +31,187 @@ cargo run
 
 Type `QUIT` (or `EXIT` or `BYE`) to exit, or press `Ctrl+C`.
 
-## Usage
+## 📖 Usage
 
 ### Immediate Commands
 
-These commands execute immediately:
+Execute these commands directly at the READY prompt:
 
-- `LIST` - Display the current program
-- `RUN` - Execute the program in memory
-- `NEW` - Clear program memory
-- `CLR` - Clear variables only
-- `LOAD "filename"` - Load a .PRG file (e.g., `LOAD "soccer"` loads `soccer.prg`)
-- `SAVE "filename"` - Save current program as .PRG file
-- `PRINT expression` - Print text or evaluate expressions (or use `?`)
-- `QUIT` - Exit the interpreter (also `EXIT` or `BYE`)
+| Command | Description | Example |
+|---------|-------------|---------|
+| `LIST` | Display the current program | `LIST` |
+| `RUN` | Execute the program in memory | `RUN` |
+| `NEW` | Clear program memory | `NEW` |
+| `CLR` | Clear variables only | `CLR` |
+| `LOAD "file"` | Load a .PRG file | `LOAD "SOCCER"` |
+| `SAVE "file"` | Save program to .PRG file | `SAVE "MYPRG"` |
+| `PRINT expr` | Print text or evaluate expression | `PRINT 2+2` |
+| `?` | Shorthand for PRINT | `? "HELLO"` |
+| `QUIT` | Exit the interpreter | `QUIT` |
 
-### Program Lines
+### Programming
 
 Type a line number followed by code to add it to the program:
 
-```
+```basic
 10 PRINT "HELLO, WORLD!"
-20 END
+20 FOR I=1 TO 10
+30 PRINT I
+40 NEXT I
+50 END
 ```
 
 Type just a line number to delete that line:
 
+```basic
+20
 ```
-10
+
+### Variables
+
+```basic
+A=10
+B=20
+PRINT A+B
+NAME$="COMMODORE"
+PRINT NAME$
 ```
 
-## PRG File Format
+### Control Flow
 
-.PRG files use the Commodore 64 tokenized BASIC format:
+**IF/THEN:**
+```basic
+10 IF X>5 THEN PRINT "BIG"
+20 IF X<5 THEN GOTO 100
+```
 
-- First 2 bytes: Load address (0x0801 for BASIC programs)
-- Each line: [next_addr_lo, next_addr_hi, line_num_lo, line_num_hi, tokens..., 0x00]
-- End of program: [0x00, 0x00]
+**FOR/NEXT Loops:**
+```basic
+10 FOR I=1 TO 10
+20 PRINT I*I
+30 NEXT I
+```
 
-## Example Session
+**Subroutines:**
+```basic
+10 GOSUB 1000
+20 END
+1000 PRINT "SUBROUTINE"
+1010 RETURN
+```
+
+## 🎮 Example Session
 
 ```
+    **** COMMODORE 64 BASIC V2 ****
+
+ 64K RAM SYSTEM  38911 BASIC BYTES FREE
+
 READY.
-10 PRINT "HELLO FROM C64!"
-20 PRINT "NANO-BASIC ROCKS"
-30 END
-LIST
-10 PRINT "HELLO FROM C64!"
-20 PRINT "NANO-BASIC ROCKS"
-30 END
-READY.
+10 FOR I=1 TO 5
+20 PRINT I;" SQUARED = ";I*I
+30 NEXT I
 RUN
-HELLO FROM C64!
-NANO-BASIC ROCKS
+ 1  SQUARED =  1
+ 2  SQUARED =  4
+ 3  SQUARED =  9
+ 4  SQUARED =  16
+ 5  SQUARED =  25
 READY.
-SAVE "TEST"
-SAVING TEST
+SAVE "SQUARES"
+SAVING SQUARES
 READY.
-NEW
-LOAD "SOCCER"
-LOADING SOCCER
-READY.
-LIST
-10 PRINT "*** SOCCER GAME ***"
-20 PRINT
-30 PRINT "GOAL!"
-40 PRINT "SCORE: 3-2"
-50 END
-READY.
-RUN
-*** SOCCER GAME ***
-
-GOAL!
-SCORE: 3-2
-READY.
+QUIT
 ```
 
-## Supported C64 BASIC V2 Tokens
+## 📝 What's Implemented
 
-Currently implemented:
-- Commands: END, FOR, NEXT, DATA, INPUT, DIM, READ, LET, GOTO, RUN, IF, RESTORE, GOSUB, RETURN, REM, STOP, ON, WAIT, LOAD, SAVE, VERIFY, DEF, POKE, PRINT, CONT, LIST, CLR, CMD, SYS, OPEN, CLOSE, GET, NEW
-- Operators: TAB(, TO, FN, SPC(, THEN, NOT, STEP, +, -, *, /, ^, AND, OR, >, =, <
-- Functions: SGN, INT, ABS, USR, FRE, POS, SQR, RND, LOG, EXP, COS, SIN, TAN, ATN, PEEK, LEN, STR$, VAL, ASC, CHR$, LEFT$, RIGHT$, MID$
+### ✅ Commands (60+ features)
+- **Program Control**: LET, GOTO, IF/THEN, GOSUB, RETURN, FOR, NEXT, STEP, END, STOP
+- **Program Management**: LIST, RUN, NEW, CLR, LOAD, SAVE
+- **Output**: PRINT, ? (shorthand)
+- **Comments**: REM
 
-## Test Files
+### ✅ Operators
+- **Arithmetic**: `+`, `-`, `*`, `/`, `^` (exponentiation)
+- **Comparison**: `=`, `<>`, `<`, `>`, `<=`, `>=`
+- **Logical**: `AND`, `OR`, `NOT` (bitwise like C64)
+- **Parentheses** for grouping expressions
 
-Generate test .PRG files:
+### ✅ Math Functions
+`ABS`, `INT`, `SGN`, `SQR`, `SIN`, `COS`, `TAN`, `ATN`, `LOG`, `EXP`, `RND`
+
+### ✅ String Functions
+`LEFT$`, `RIGHT$`, `MID$`, `LEN`, `ASC`, `CHR$`, `VAL`, `STR$`
+
+### ✅ Features
+- Proper operator precedence
+- String concatenation with `+`
+- Uninitialized variables default to 0 or ""
+- C64-style boolean values (-1 for true, 0 for false)
+
+## 🎯 TODO (Future Enhancements)
+
+- [ ] INPUT command (user input during program execution)
+- [ ] READ/DATA statements
+- [ ] DIM arrays (single and multi-dimensional)
+- [ ] ON...GOTO/GOSUB computed branches
+- [ ] PRINT formatting (semicolon/comma separators)
+- [ ] Multiple statements per line with `:` separator
+- [ ] File I/O (OPEN, CLOSE, INPUT#, PRINT#)
+- [ ] POKE/PEEK/SYS (memory operations)
+- [ ] DEF FN (user-defined functions)
+
+## 📦 PRG File Format
+
+.PRG files use the authentic Commodore 64 tokenized BASIC format:
+
+- **Bytes 0-1**: Load address (0x0801 for BASIC programs, little-endian)
+- **Each line**: [next_addr_lo, next_addr_hi, line_num_lo, line_num_hi, tokens..., 0x00]
+- **End marker**: [0x00, 0x00]
+
+Generate test programs:
 
 ```bash
-python3 create_prg.py      # Creates test.prg
-python3 create_soccer.py   # Creates soccer.prg
+python3 create_prg.py        # Creates test.prg
+python3 create_soccer.py     # Creates soccer.prg
+python3 create_math_demo.py  # Creates math.prg
 ```
 
-## TODO
+## 🔧 Technical Details
 
-- [ ] Full BASIC statement execution (LET, IF, GOTO, GOSUB, FOR/NEXT)
-- [ ] Expression evaluator with math operations
-- [ ] Variable storage (numeric and string)
-- [ ] Flow control (GOTO, GOSUB, RETURN, FOR, NEXT)
-- [ ] More BASIC commands (INPUT, READ/DATA, etc.)
-- [ ] Keyboard shortcuts (cursor movement, history)
+- **Language**: Rust (edition 2024)
+- **TUI Framework**: ratatui 0.29 + crossterm 0.28
+- **Binary Size**: ~1MB (optimized release build)
+- **C64 Colors**: RGB values matching original palette
+  - Background: `#403285` (C64 blue)
+  - Text: `#7ABFC7` (C64 light blue)
+- **Token Specification**: C64 BASIC V2 (tokens 0x80-0xD1)
 
-## Technical Details
+## 📚 Documentation
 
-- Built with Rust
-- TUI: ratatui + crossterm
-- Authentic C64 colors (RGB values matching the original palette)
-- Token-based parsing matching C64 BASIC V2 specification
+- [USAGE.md](USAGE.md) - Detailed user guide with examples
+- [EXAMPLES.md](EXAMPLES.md) - 20 example programs to try
+- [COMMANDS.md](COMMANDS.md) - Complete C64 BASIC reference
+- [STATUS.md](STATUS.md) - Feature matrix and roadmap
+- [CHANGELOG.md](CHANGELOG.md) - Version history
 
-## License
+## 🐛 Known Limitations
+
+- Output from RUN appears all at once when program completes (not line-by-line)
+  - This is a TUI architecture limitation
+  - All output IS generated correctly, just batched for display
+- Infinite loops require Ctrl+C to interrupt
+- No INPUT command yet (can't get user input during program execution)
+
+## 🤝 Contributing
+
+Contributions welcome! This is a learning project implementing a C64 BASIC interpreter.
+
+## 📄 License
 
 MIT
+
+---
+
+**Made with ❤️ for Commodore 64 enthusiasts**
