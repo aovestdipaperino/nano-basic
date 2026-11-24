@@ -1,5 +1,7 @@
 # Nano-BASIC: Commodore 64 BASIC Interpreter
 
+[![GitHub stars](https://img.shields.io/github/stars/aovestdipaperino/nano-basic?logo=github&color=brightgreen)](https://github.com/aovestdipaperino/nano-basic/stargazers)
+
 ![Nano-BASIC Logo](LOGO.png)
 
 A Commodore 64 BASIC V2 interpreter with an authentic 40x25 character TUI that resembles the original C64 screen.
